@@ -180,6 +180,27 @@ body {
   box-shadow: 0 6px 12px rgba(37, 99, 235, 0.15);
 }
 
+.option-btn.premium {
+  border-color: #facc15;
+  background: linear-gradient(135deg, #fef9c3, #facc15);
+  color: #1f1300;
+  font-weight: 700;
+  position: relative;
+  overflow: hidden;
+  animation: premiumGlow 2.4s ease-in-out infinite;
+}
+
+html[data-theme="dark"] .option-btn.premium {
+  border-color: #fbbf24;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #1f1300;
+}
+
+.option-btn.premium:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 8px 18px rgba(250, 204, 21, 0.35);
+}
+
 .cards {
   display: grid;
   gap: 0.75rem;
@@ -395,6 +416,16 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes premiumGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(250, 204, 21, 0.1);
   }
 }
 

@@ -522,6 +522,179 @@ const SKILLS_BY_DISCIPLINE = {
   ],
 };
 
+const EXTRA_SKILLS_BY_DISCIPLINE = {
+  software: [
+    {
+      skill: "API design",
+      why: "Teams expect consistent, well-documented APIs.",
+      improve: "Design a REST API and document it with examples.",
+    },
+    {
+      skill: "Testing strategy",
+      why: "Quality relies on unit, integration, and e2e tests.",
+      improve: "Add tests that cover edge cases and failure paths.",
+    },
+    {
+      skill: "Performance profiling",
+      why: "Slow services cost money and hurt UX.",
+      improve: "Profile one app and remove a bottleneck.",
+    },
+  ],
+  data: [
+    {
+      skill: "Data quality checks",
+      why: "Reliable dashboards need clean data pipelines.",
+      improve: "Add checks for missing values and anomalies.",
+    },
+    {
+      skill: "Experiment design",
+      why: "A/B tests drive product decisions.",
+      improve: "Draft an experiment plan with success metrics.",
+    },
+    {
+      skill: "Pipeline automation",
+      why: "Automation keeps data fresh and reliable.",
+      improve: "Schedule a pipeline and monitor failures.",
+    },
+  ],
+  engineering: [
+    {
+      skill: "Root cause analysis",
+      why: "Engineers must troubleshoot complex failures.",
+      improve: "Write a structured RCA for a simulated fault.",
+    },
+    {
+      skill: "Supplier collaboration",
+      why: "Many projects rely on vendors and procurement.",
+      improve: "Practice writing clear technical requirements.",
+    },
+    {
+      skill: "Sustainability awareness",
+      why: "Modern projects must consider energy and waste.",
+      improve: "Identify sustainability trade-offs in a design.",
+    },
+  ],
+  business: [
+    {
+      skill: "Business storytelling",
+      why: "Decisions move faster with clear narratives.",
+      improve: "Turn a dataset into a 3-slide executive summary.",
+    },
+    {
+      skill: "Pricing analysis",
+      why: "Pricing impacts revenue and retention.",
+      improve: "Compare competitor pricing and value props.",
+    },
+    {
+      skill: "Risk assessment",
+      why: "Leaders expect early warning signals.",
+      improve: "Create a simple risk register for a project.",
+    },
+  ],
+  marketing: [
+    {
+      skill: "SEO fundamentals",
+      why: "Organic growth remains cost-effective.",
+      improve: "Audit a page and create SEO recommendations.",
+    },
+    {
+      skill: "Paid media optimization",
+      why: "Budgets require strong ROI tracking.",
+      improve: "Design a weekly optimization checklist.",
+    },
+    {
+      skill: "Customer journey mapping",
+      why: "Lifecycle teams need full-funnel alignment.",
+      improve: "Map awareness to retention touchpoints.",
+    },
+  ],
+  design: [
+    {
+      skill: "Usability testing",
+      why: "Testing highlights friction before launch.",
+      improve: "Run 5 usability tests and synthesize themes.",
+    },
+    {
+      skill: "Interaction design",
+      why: "Micro-interactions improve product polish.",
+      improve: "Prototype a flow with detailed interactions.",
+    },
+    {
+      skill: "Design handoff",
+      why: "Clear specs speed up engineering delivery.",
+      improve: "Create annotated specs with tokens and spacing.",
+    },
+  ],
+  health: [
+    {
+      skill: "Regulatory compliance",
+      why: "Healthcare roles require strong compliance awareness.",
+      improve: "Review local regulations and summarize key rules.",
+    },
+    {
+      skill: "Patient communication",
+      why: "Clear communication improves outcomes.",
+      improve: "Practice explaining procedures in plain language.",
+    },
+    {
+      skill: "Clinical documentation",
+      why: "Accurate records are essential.",
+      improve: "Write structured, consistent notes.",
+    },
+  ],
+  education: [
+    {
+      skill: "Learning analytics",
+      why: "Data improves teaching outcomes.",
+      improve: "Review a dataset and propose interventions.",
+    },
+    {
+      skill: "Assessment feedback",
+      why: "Feedback drives student growth.",
+      improve: "Create a feedback rubric and examples.",
+    },
+    {
+      skill: "Parent communication",
+      why: "Families expect clarity and partnership.",
+      improve: "Draft concise update templates.",
+    },
+  ],
+  law: [
+    {
+      skill: "Case summarization",
+      why: "Clear summaries speed up decision making.",
+      improve: "Summarize a case in five bullet points.",
+    },
+    {
+      skill: "Compliance tracking",
+      why: "Regulatory deadlines require vigilance.",
+      improve: "Build a simple compliance checklist.",
+    },
+    {
+      skill: "Negotiation basics",
+      why: "Legal work often involves negotiation.",
+      improve: "Practice a negotiation script and objectives.",
+    },
+  ],
+  general: [
+    {
+      skill: "Time management",
+      why: "Delivery speed depends on prioritization.",
+      improve: "Plan weekly goals and review outcomes.",
+    },
+    {
+      skill: "Presentation skills",
+      why: "Clear presentations improve stakeholder buy-in.",
+      improve: "Deliver a 3-minute summary with visuals.",
+    },
+    {
+      skill: "Customer empathy",
+      why: "Understanding users improves decisions.",
+      improve: "Interview a user and capture insights.",
+    },
+  ],
+};
+
 const INTERVIEW_PRACTICE_BY_DISCIPLINE = {
   software: {
     focus: "Coding, debugging, and system thinking.",
@@ -1070,6 +1243,7 @@ const state = {
     ai: false,
   },
   isPremium: false,
+  skillCursor: {},
 };
 
 let botQueue = Promise.resolve();
@@ -1240,6 +1414,13 @@ function detectAction(text) {
     normalized.includes("switch role")
   ) {
     return "change-type";
+  }
+  if (
+    normalized.includes("refresh skills") ||
+    normalized.includes("new skills") ||
+    normalized.includes("more skills")
+  ) {
+    return "refresh-skills";
   }
   if (
     normalized.includes("premium") ||
@@ -1474,6 +1655,9 @@ function createOptions(options) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "option-btn";
+    if (option.value === "premium") {
+      button.classList.add("premium");
+    }
     button.textContent = option.label;
     button.addEventListener("click", () => {
       if (isBotTyping) {
@@ -1714,6 +1898,24 @@ function getTypeLabel(type) {
   return "Job";
 }
 
+function getRotatingSkills(disciplineKey, count = 5) {
+  const base = SKILLS_BY_DISCIPLINE[disciplineKey] || SKILLS_BY_DISCIPLINE.general;
+  const extra =
+    EXTRA_SKILLS_BY_DISCIPLINE[disciplineKey] ||
+    EXTRA_SKILLS_BY_DISCIPLINE.general;
+  const combined = [...base, ...extra];
+  if (combined.length <= count) {
+    return combined;
+  }
+  const cursor = state.skillCursor[disciplineKey] || 0;
+  const selected = [];
+  for (let i = 0; i < count; i += 1) {
+    selected.push(combined[(cursor + i) % combined.length]);
+  }
+  state.skillCursor[disciplineKey] = (cursor + count) % combined.length;
+  return selected;
+}
+
 function buildMarketQuery(disciplineKey, locationLabel) {
   const baseQuery =
     MARKET_QUERY_BY_DISCIPLINE[disciplineKey] || disciplineKey || "jobs";
@@ -1878,9 +2080,8 @@ function showSkills() {
 
   const list = document.createElement("ul");
   list.className = "skills-list";
-  const skills =
-    SKILLS_BY_DISCIPLINE[state.disciplineKey || "general"] ||
-    SKILLS_BY_DISCIPLINE.general;
+  const disciplineKey = state.disciplineKey || "general";
+  const skills = getRotatingSkills(disciplineKey, 5);
   skills.forEach((item) => {
     const li = document.createElement("li");
     const strong = document.createElement("strong");
@@ -1937,6 +2138,7 @@ function showSkills() {
   bubble.appendChild(note);
 
   const options = [
+    { label: "Refresh skills", value: "refresh-skills" },
     { label: "Change location", value: "change-location" },
     { label: "Change study area", value: "change-discipline" },
     { label: "Market snapshot", value: "market" },
@@ -2208,6 +2410,9 @@ function handlePremiumAction() {
     queueBotMessage(
       `Premium unlocked for preview. Video resources are now available for $${PREMIUM.price}.`
     );
+    if (state.mode === "skills") {
+      showResults();
+    }
     return;
   }
   queueBotMessage(
@@ -2279,6 +2484,11 @@ function handleUserMessage(rawText) {
     handlePremiumAction();
     return;
   }
+  if (action === "refresh-skills") {
+    state.mode = "skills";
+    showResults();
+    return;
+  }
 
   const globalIntent = detectIntent(text);
   if (globalIntent === "market" && state.step !== "results") {
@@ -2309,6 +2519,11 @@ function handleUserMessage(rawText) {
   if (state.step === "results") {
     const intent = detectIntent(text);
     const action = detectAction(text);
+    if (action === "refresh-skills") {
+      state.mode = "skills";
+      showResults();
+      return;
+    }
     if (action === "change-location") {
       askForLocation();
       return;
@@ -2403,6 +2618,7 @@ function startConversation() {
   state.locationLabel = null;
   state.locationMatched = false;
   state.skillFocus = { ai: false };
+  state.skillCursor = {};
 
   queueBotMessage(
     "Hi! Type in the box below or tap a button to find internships, graduate programs, jobs, market snapshots, or interview practice. How can I help?",
