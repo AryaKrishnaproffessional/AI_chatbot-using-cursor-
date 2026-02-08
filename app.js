@@ -2,7 +2,9 @@ const chat = document.querySelector("#chat");
 const form = document.querySelector("#input-form");
 const input = document.querySelector("#message-input");
 const resetButton = document.querySelector("#reset");
+const themeToggle = document.querySelector("#theme-toggle");
 const sendButton = form.querySelector("button");
+const inputForm = form;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const SOON_WINDOW_DAYS = 60;
@@ -10,12 +12,14 @@ const SOON_WINDOW_DAYS = 60;
 const HELP_OPTIONS = [
   { label: "Find internships and graduate programs", value: "internships" },
   { label: "Find jobs", value: "jobs" },
+  { label: "Interview practice", value: "interview" },
   { label: "Skills in demand", value: "skills" },
 ];
 
 const JOB_TYPE_OPTIONS = [
   { label: "Internships & graduate programs", value: "internships" },
   { label: "Jobs", value: "jobs" },
+  { label: "Interview practice", value: "interview" },
   { label: "Skills in demand", value: "skills" },
 ];
 
@@ -56,7 +60,7 @@ const LOCATION_LABELS = {
 };
 
 const LOCATION_SYNONYMS = {
-  all: ["all locations", "anywhere", "any location", "all states", "any"],
+  all: ["all", "all locations", "anywhere", "any location", "all states", "any"],
   sydney: ["sydney", "nsw", "new south wales"],
   melbourne: ["melbourne", "vic", "victoria"],
   brisbane: ["brisbane", "qld", "queensland"],
@@ -385,6 +389,149 @@ const SKILLS_BY_DISCIPLINE = {
   ],
 };
 
+const INTERVIEW_PRACTICE_BY_DISCIPLINE = {
+  software: {
+    focus: "Coding, debugging, and system thinking.",
+    questions: [
+      "Tell me about a project where you shipped a feature end-to-end.",
+      "How would you design a URL shortener or a chat service?",
+      "Walk through a bug you fixed and how you found the root cause.",
+      "How do you choose data structures for performance and clarity?",
+      "What tests would you write for a new API endpoint?",
+    ],
+    tips: [
+      "Prepare two or three STAR stories about teamwork and impact.",
+      "Practice explaining trade-offs and assumptions out loud.",
+    ],
+  },
+  data: {
+    focus: "Analytics, experimentation, and storytelling.",
+    questions: [
+      "Describe a data project where you influenced a decision.",
+      "How would you validate a dashboard metric that looks wrong?",
+      "Explain a model or analysis to a non-technical stakeholder.",
+      "What is the difference between correlation and causation?",
+      "How would you design an A/B test for a product change?",
+    ],
+    tips: [
+      "Keep a portfolio story with a clear problem, method, and impact.",
+      "Practice writing insights in one concise paragraph.",
+    ],
+  },
+  engineering: {
+    focus: "Technical fundamentals, safety, and practical design.",
+    questions: [
+      "Tell me about an engineering project and your role in it.",
+      "How do you verify a design meets safety or compliance standards?",
+      "Describe a time you balanced cost, time, and quality.",
+      "How would you approach troubleshooting a failed component?",
+      "What tools or simulations do you use to validate designs?",
+    ],
+    tips: [
+      "Bring a portfolio summary with drawings or calculations.",
+      "Review core standards or regulations in your discipline.",
+    ],
+  },
+  business: {
+    focus: "Commercial awareness, analysis, and communication.",
+    questions: [
+      "Walk me through a time you improved a process or result.",
+      "How do you prioritize tasks when everything feels urgent?",
+      "Describe how you would size a market for a new product.",
+      "Tell me about a time you influenced a stakeholder decision.",
+      "What business metrics would you track for a growth team?",
+    ],
+    tips: [
+      "Prepare structured answers with a clear outcome and numbers.",
+      "Review company news and show commercial curiosity.",
+    ],
+  },
+  marketing: {
+    focus: "Campaign strategy, content, and performance.",
+    questions: [
+      "How would you plan a campaign for a new product launch?",
+      "Tell me about content you created that performed well.",
+      "How do you decide which channels to invest in?",
+      "Describe a time you used data to adjust a campaign.",
+      "What metrics matter most for brand vs. performance marketing?",
+    ],
+    tips: [
+      "Bring examples of content briefs or campaigns you led.",
+      "Practice tying outcomes to clear KPIs.",
+    ],
+  },
+  design: {
+    focus: "User research, prototyping, and design rationale.",
+    questions: [
+      "Walk me through a design project from brief to delivery.",
+      "How do you handle feedback that conflicts with user research?",
+      "Describe your process for turning insights into UI decisions.",
+      "How do you measure design success after launch?",
+      "What accessibility checks do you run on a design?",
+    ],
+    tips: [
+      "Prepare a portfolio story that highlights your decisions.",
+      "Practice narrating trade-offs between usability and brand.",
+    ],
+  },
+  health: {
+    focus: "Evidence-based practice and safety.",
+    questions: [
+      "Tell me about a time you followed a strict protocol.",
+      "How do you ensure accuracy in data or lab results?",
+      "Describe a situation where patient safety was a priority.",
+      "How would you handle a conflict in a clinical team?",
+      "What motivates you to work in health or science?",
+    ],
+    tips: [
+      "Review core clinical or lab safety procedures.",
+      "Prepare examples that show empathy and diligence.",
+    ],
+  },
+  education: {
+    focus: "Learning design and classroom practice.",
+    questions: [
+      "Describe a lesson plan you created and why it worked.",
+      "How do you adapt for diverse learning needs?",
+      "Tell me about a time you managed classroom behavior.",
+      "How do you assess whether students learned a concept?",
+      "What is your approach to inclusive education?",
+    ],
+    tips: [
+      "Bring a sample lesson or unit outline to discuss.",
+      "Prepare one example of differentiated instruction.",
+    ],
+  },
+  law: {
+    focus: "Research, drafting, and attention to detail.",
+    questions: [
+      "Describe a legal research task and how you approached it.",
+      "How do you ensure accuracy when drafting documents?",
+      "Tell me about a time you had to manage sensitive information.",
+      "How would you explain a complex legal concept to a client?",
+      "What area of law are you most interested in and why?",
+    ],
+    tips: [
+      "Prepare a writing sample story that shows structure and clarity.",
+      "Review key cases or topics relevant to the firm.",
+    ],
+  },
+  general: {
+    focus: "Transferable skills and motivation.",
+    questions: [
+      "Tell me about a project where you solved a tough problem.",
+      "How do you organize your work when priorities change?",
+      "Describe a time you worked in a team under pressure.",
+      "What strengths would you bring to this role?",
+      "Why are you interested in this industry?",
+    ],
+    tips: [
+      "Prepare concise STAR stories with results and numbers.",
+      "Show curiosity by asking thoughtful follow-up questions.",
+    ],
+  },
+};
+
 const OPPORTUNITIES = [
   {
     id: "op-001",
@@ -395,7 +542,8 @@ const OPPORTUNITIES = [
     disciplines: ["software"],
     opens: "2026-02-20",
     closes: "2026-04-12",
-    url: "https://example.com/novaapps-intern",
+    companyUrl: "https://www.novaapps.com",
+    careerUrl: "https://www.novaapps.com/careers",
     description: "Build features with a product squad and mentor.",
   },
   {
@@ -407,7 +555,8 @@ const OPPORTUNITIES = [
     disciplines: ["data", "business"],
     opens: "2026-03-05",
     closes: "2026-04-30",
-    url: "https://example.com/aurora-data-intern",
+    companyUrl: "https://www.aurorainsights.com",
+    careerUrl: "https://www.aurorainsights.com/careers",
     description: "Support dashboards and weekly performance reports.",
   },
   {
@@ -419,7 +568,8 @@ const OPPORTUNITIES = [
     disciplines: ["design"],
     opens: "2026-02-25",
     closes: "2026-03-31",
-    url: "https://example.com/brightspark-ux-intern",
+    companyUrl: "https://www.brightsparkstudio.com",
+    careerUrl: "https://www.brightsparkstudio.com/careers",
     description: "Create wireframes and prototype new experiences.",
   },
   {
@@ -431,7 +581,8 @@ const OPPORTUNITIES = [
     disciplines: ["health"],
     opens: "2026-03-10",
     closes: "2026-04-05",
-    url: "https://example.com/civichealth-intern",
+    companyUrl: "https://www.civichealthlabs.com",
+    careerUrl: "https://www.civichealthlabs.com/careers",
     description: "Assist with lab studies and clinical data review.",
   },
   {
@@ -443,7 +594,8 @@ const OPPORTUNITIES = [
     disciplines: ["engineering"],
     opens: "2026-02-18",
     closes: "2026-03-20",
-    url: "https://example.com/metrogrid-vacationer",
+    companyUrl: "https://www.metrogridenergy.com",
+    careerUrl: "https://www.metrogridenergy.com/careers",
     description: "Support maintenance planning and site inspections.",
   },
   {
@@ -455,7 +607,8 @@ const OPPORTUNITIES = [
     disciplines: ["software", "data"],
     opens: "2026-03-01",
     closes: "2026-04-15",
-    url: "https://example.com/coastline-grad-tech",
+    companyUrl: "https://www.coastlinebank.com",
+    careerUrl: "https://www.coastlinebank.com/careers",
     description: "Rotate across engineering, data, and product teams.",
   },
   {
@@ -467,7 +620,8 @@ const OPPORTUNITIES = [
     disciplines: ["business", "marketing"],
     opens: "2026-03-12",
     closes: "2026-04-25",
-    url: "https://example.com/skyline-grad-business",
+    companyUrl: "https://www.skylineconsulting.com",
+    careerUrl: "https://www.skylineconsulting.com/careers",
     description: "Client rotations in strategy, analytics, and growth.",
   },
   {
@@ -479,7 +633,8 @@ const OPPORTUNITIES = [
     disciplines: ["engineering"],
     opens: "2026-02-28",
     closes: "2026-04-08",
-    url: "https://example.com/northernrail-grad",
+    companyUrl: "https://www.northernrail.com",
+    careerUrl: "https://www.northernrail.com/careers",
     description: "Work with maintenance, design, and safety teams.",
   },
   {
@@ -491,7 +646,8 @@ const OPPORTUNITIES = [
     disciplines: ["education"],
     opens: "2026-03-20",
     closes: "2026-04-30",
-    url: "https://example.com/unity-grad-education",
+    companyUrl: "https://www.unityschools.edu.au",
+    careerUrl: "https://www.unityschools.edu.au/careers",
     description: "Mentored placements across primary and secondary.",
   },
   {
@@ -503,11 +659,32 @@ const OPPORTUNITIES = [
     disciplines: ["software"],
     opens: "2026-02-10",
     closes: "2026-03-31",
-    url: "https://example.com/harbortech-junior",
     description: "Ship features and learn from senior engineers.",
   },
   {
     id: "op-011",
+    type: "job",
+    title: "Senior Software Engineer",
+    company: "CloudBridge",
+    locations: ["melbourne", "remote"],
+    disciplines: ["software"],
+    opens: "2026-02-08",
+    closes: "2026-04-05",
+    description: "Lead projects and mentor a small squad.",
+  },
+  {
+    id: "op-012",
+    type: "job",
+    title: "DevOps Engineer",
+    company: "Summit Infrastructure",
+    locations: ["sydney", "remote"],
+    disciplines: ["software"],
+    opens: "2026-02-14",
+    closes: "2026-04-10",
+    description: "Own CI/CD pipelines and cloud reliability.",
+  },
+  {
+    id: "op-013",
     type: "job",
     title: "Data Analyst",
     company: "Greenline Retail",
@@ -515,11 +692,21 @@ const OPPORTUNITIES = [
     disciplines: ["data", "business"],
     opens: "2026-02-12",
     closes: "2026-03-28",
-    url: "https://example.com/greenline-analyst",
     description: "Analyze sales trends and inform merchandising.",
   },
   {
-    id: "op-012",
+    id: "op-014",
+    type: "job",
+    title: "Data Scientist",
+    company: "Aurora Energy",
+    locations: ["brisbane"],
+    disciplines: ["data"],
+    opens: "2026-02-18",
+    closes: "2026-04-12",
+    description: "Develop forecasting models and experiment analysis.",
+  },
+  {
+    id: "op-015",
     type: "job",
     title: "Marketing Coordinator",
     company: "Sunrise Media",
@@ -527,11 +714,87 @@ const OPPORTUNITIES = [
     disciplines: ["marketing", "business"],
     opens: "2026-02-15",
     closes: "2026-03-29",
-    url: "https://example.com/sunrise-marketing",
     description: "Coordinate campaigns and partner deliverables.",
   },
   {
-    id: "op-013",
+    id: "op-016",
+    type: "job",
+    title: "Marketing Manager",
+    company: "Pioneer Health",
+    locations: ["sydney"],
+    disciplines: ["marketing", "business"],
+    opens: "2026-02-16",
+    closes: "2026-04-02",
+    description: "Lead brand campaigns and go-to-market plans.",
+  },
+  {
+    id: "op-017",
+    type: "job",
+    title: "Product Designer",
+    company: "Studio Eight",
+    locations: ["melbourne"],
+    disciplines: ["design"],
+    opens: "2026-02-22",
+    closes: "2026-04-15",
+    description: "Own product flows from research to launch.",
+  },
+  {
+    id: "op-018",
+    type: "job",
+    title: "Mechanical Engineer",
+    company: "MetroGrid Energy",
+    locations: ["perth"],
+    disciplines: ["engineering"],
+    opens: "2026-02-20",
+    closes: "2026-04-08",
+    description: "Deliver equipment upgrades and maintenance plans.",
+  },
+  {
+    id: "op-019",
+    type: "job",
+    title: "Project Engineer",
+    company: "Northern Rail",
+    locations: ["adelaide"],
+    disciplines: ["engineering"],
+    opens: "2026-02-24",
+    closes: "2026-04-18",
+    description: "Coordinate project schedules and site delivery.",
+  },
+  {
+    id: "op-020",
+    type: "job",
+    title: "Finance Analyst",
+    company: "Coastline Bank",
+    locations: ["sydney"],
+    disciplines: ["business"],
+    opens: "2026-02-26",
+    closes: "2026-04-20",
+    description: "Build forecasts and support monthly reporting.",
+  },
+  {
+    id: "op-021",
+    type: "job",
+    title: "Learning Designer",
+    company: "Unity Schools",
+    locations: ["canberra", "remote"],
+    disciplines: ["education"],
+    opens: "2026-02-21",
+    closes: "2026-04-25",
+    description: "Create blended learning programs for schools.",
+  },
+  {
+    id: "op-022",
+    type: "job",
+    title: "Clinical Research Coordinator",
+    company: "CivicHealth Labs",
+    locations: ["brisbane"],
+    disciplines: ["health"],
+    opens: "2026-02-19",
+    closes: "2026-04-22",
+    description: "Support trials, documentation, and participant care.",
+  },
+  {
+    id: "op-023",
     type: "job",
     title: "Legal Research Assistant",
     company: "Anchor Legal",
@@ -539,7 +802,6 @@ const OPPORTUNITIES = [
     disciplines: ["law"],
     opens: "2026-02-22",
     closes: "2026-04-04",
-    url: "https://example.com/anchor-legal",
     description: "Support case research and document preparation.",
   },
 ];
@@ -558,6 +820,8 @@ const state = {
 let botQueue = Promise.resolve();
 let isBotTyping = false;
 
+const THEME_STORAGE_KEY = "careerCompassTheme";
+
 function normalizeInput(text) {
   return text
     .toLowerCase()
@@ -574,6 +838,36 @@ function titleCase(text) {
     .join(" ");
 }
 
+function getInitialTheme() {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  if (stored === "light" || stored === "dark") {
+    return stored;
+  }
+  if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+    return "dark";
+  }
+  return "light";
+}
+
+function updateThemeToggle(theme) {
+  if (!themeToggle) {
+    return;
+  }
+  themeToggle.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  updateThemeToggle(theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "light";
+  const next = current === "dark" ? "light" : "dark";
+  applyTheme(next);
+}
+
 function detectIntent(text) {
   const normalized = normalizeInput(text);
   if (normalized.includes("intern") || normalized.includes("grad")) {
@@ -581,6 +875,9 @@ function detectIntent(text) {
   }
   if (normalized.includes("job") || normalized.includes("role")) {
     return "jobs";
+  }
+  if (normalized.includes("interview") || normalized.includes("practice")) {
+    return "interview";
   }
   if (normalized.includes("skill")) {
     return "skills";
@@ -657,8 +954,8 @@ function resolveLocation(text) {
   }
   const rawLabel = titleCase(normalized || text);
   return {
-    key: "any",
-    label: rawLabel || "Your location",
+    key: "all",
+    label: rawLabel || "All locations",
     matched: false,
   };
 }
@@ -763,6 +1060,19 @@ function setInputEnabled(enabled) {
   }
 }
 
+function focusInput(shouldFlash = false) {
+  inputForm.scrollIntoView({ behavior: "smooth", block: "end" });
+  input.focus({ preventScroll: true });
+  if (shouldFlash) {
+    inputForm.classList.remove("flash");
+    void inputForm.offsetWidth;
+    inputForm.classList.add("flash");
+    setTimeout(() => {
+      inputForm.classList.remove("flash");
+    }, 900);
+  }
+}
+
 function enqueueBotAction(action) {
   botQueue = botQueue.then(action).catch((error) => {
     console.error(error);
@@ -806,6 +1116,7 @@ async function withTyping(renderFn, delay) {
   renderFn();
   isBotTyping = false;
   setInputEnabled(true);
+  focusInput();
 }
 
 function createOptions(options) {
@@ -820,6 +1131,7 @@ function createOptions(options) {
       if (isBotTyping) {
         return;
       }
+      focusInput(true);
       addUserMessage(option.label);
       handleUserMessage(option.value);
     });
@@ -845,6 +1157,7 @@ function addUserMessage(text) {
   paragraph.textContent = text;
   bubble.appendChild(paragraph);
   scrollToBottom();
+  focusInput();
 }
 
 function queueBotMessage(text, options = [], delay = getTypingDelay(text)) {
@@ -865,6 +1178,10 @@ function queueResultsMessage(headerText, noteText, opportunities) {
 
 function queueSkillsMessage() {
   enqueueBotAction(() => withTyping(() => showSkills(), 620));
+}
+
+function queueInterviewPractice() {
+  enqueueBotAction(() => withTyping(() => showInterviewPractice(), 640));
 }
 
 function addResultsMessage(headerText, noteText, opportunities) {
@@ -889,6 +1206,8 @@ function addResultsMessage(headerText, noteText, opportunities) {
       ? "Jobs"
       : state.mode === "skills"
       ? "Skills"
+      : state.mode === "interview"
+      ? "Interview practice"
       : "Internships & graduate programs"
   }`;
   bubble.appendChild(summary);
@@ -909,7 +1228,9 @@ function addResultsMessage(headerText, noteText, opportunities) {
     const linkTip = document.createElement("p");
     linkTip.className = "note";
     linkTip.textContent =
-      "Listing links open job board search results for the role.";
+      state.mode === "jobs"
+        ? "Listing links open job board search results for the role."
+        : "Listing links open the company careers page.";
     bubble.appendChild(linkTip);
   }
 
@@ -918,6 +1239,7 @@ function addResultsMessage(headerText, noteText, opportunities) {
       { label: "Change location", value: "change-location" },
       { label: "Change study area", value: "change-discipline" },
       { label: "Switch job type", value: "change-type" },
+      { label: "Interview practice", value: "interview" },
       { label: "See skills in demand", value: "skills" },
       { label: "Start a new search", value: "restart" },
     ])
@@ -942,6 +1264,17 @@ function buildSearchLinks(opportunity) {
       url: `https://www.linkedin.com/jobs/search/?keywords=${encodedQuery}&location=${encodedLocation}`,
     },
   ];
+}
+
+function buildCompanyLinks(opportunity) {
+  const links = [];
+  if (opportunity.careerUrl) {
+    links.push({ label: "Careers page", url: opportunity.careerUrl });
+  }
+  if (opportunity.companyUrl) {
+    links.push({ label: "Company website", url: opportunity.companyUrl });
+  }
+  return links;
 }
 
 function createOpportunityCard(opportunity) {
@@ -978,7 +1311,11 @@ function createOpportunityCard(opportunity) {
 
   const links = document.createElement("div");
   links.className = "card-links";
-  buildSearchLinks(opportunity).forEach((item) => {
+  const linkItems =
+    opportunity.type === "job"
+      ? buildSearchLinks(opportunity)
+      : buildCompanyLinks(opportunity);
+  linkItems.forEach((item) => {
     const link = document.createElement("a");
     link.href = item.url;
     link.target = "_blank";
@@ -1037,9 +1374,61 @@ function showSkills() {
     createOptions([
       { label: "Change location", value: "change-location" },
       { label: "Change study area", value: "change-discipline" },
+      { label: "Interview practice", value: "interview" },
       { label: "Start a new search", value: "restart" },
       { label: "Find internships and grad programs", value: "internships" },
       { label: "Find jobs", value: "jobs" },
+    ])
+  );
+  scrollToBottom();
+}
+
+function showInterviewPractice() {
+  const bubble = createMessageBubble("bot");
+  const header = document.createElement("p");
+  const disciplineLabel = state.disciplineLabel || "your discipline";
+  header.textContent = `Interview practice for ${disciplineLabel}:`;
+  bubble.appendChild(header);
+
+  const practice =
+    INTERVIEW_PRACTICE_BY_DISCIPLINE[state.disciplineKey || "general"] ||
+    INTERVIEW_PRACTICE_BY_DISCIPLINE.general;
+
+  const focus = document.createElement("p");
+  focus.className = "note";
+  focus.textContent = `Focus areas: ${practice.focus}`;
+  bubble.appendChild(focus);
+
+  const list = document.createElement("ul");
+  list.className = "skills-list";
+  practice.questions.forEach((question) => {
+    const li = document.createElement("li");
+    li.textContent = question;
+    list.appendChild(li);
+  });
+  bubble.appendChild(list);
+
+  const tipsHeader = document.createElement("p");
+  tipsHeader.className = "note";
+  tipsHeader.textContent = "Preparation tips:";
+  bubble.appendChild(tipsHeader);
+
+  const tipsList = document.createElement("ul");
+  tipsList.className = "skills-list";
+  practice.tips.forEach((tip) => {
+    const li = document.createElement("li");
+    li.textContent = tip;
+    tipsList.appendChild(li);
+  });
+  bubble.appendChild(tipsList);
+
+  bubble.appendChild(
+    createOptions([
+      { label: "Change study area", value: "change-discipline" },
+      { label: "Find internships and grad programs", value: "internships" },
+      { label: "Find jobs", value: "jobs" },
+      { label: "See skills in demand", value: "skills" },
+      { label: "Start a new search", value: "restart" },
     ])
   );
   scrollToBottom();
@@ -1050,6 +1439,11 @@ function showResults() {
 
   if (state.mode === "skills") {
     queueSkillsMessage();
+    return;
+  }
+
+  if (state.mode === "interview") {
+    queueInterviewPractice();
     return;
   }
 
@@ -1075,6 +1469,15 @@ function showResults() {
       noteText =
         "I could not find listings for that exact location. Showing remote or broader options in your discipline.";
     }
+  }
+
+  if (
+    !state.locationMatched &&
+    state.locationLabel &&
+    state.locationLabel !== "All locations"
+  ) {
+    const fallbackNote = `I do not have ${state.locationLabel} mapped yet, so I am showing all locations for now.`;
+    noteText = noteText ? `${noteText} ${fallbackNote}` : fallbackNote;
   }
 
   const modeLabel =
@@ -1116,7 +1519,7 @@ function handleHelpIntent(text) {
   const intent = detectIntent(text);
   if (!intent) {
     queueBotMessage(
-      "I can help with internships, graduate programs, jobs, or in-demand skills. How can I help?",
+      "I can help with internships, graduate programs, jobs, interview practice, or in-demand skills. How can I help?",
       buildOptions(HELP_OPTIONS)
     );
     return;
@@ -1128,6 +1531,11 @@ function handleHelpIntent(text) {
 function handleStudyResponse(text) {
   const resolved = resolveDiscipline(text);
   applyDiscipline(resolved);
+
+  if (state.mode === "skills" || state.mode === "interview") {
+    showResults();
+    return;
+  }
 
   if (!resolved.recognized) {
     queueBotMessage(
@@ -1161,7 +1569,7 @@ function handleJobTypeResponse(text) {
     return;
   }
   state.mode = intent;
-  if (intent === "skills") {
+  if (intent === "skills" || intent === "interview") {
     if (!state.disciplineKey) {
       askForStudy();
       return;
@@ -1256,6 +1664,15 @@ function handleUserMessage(rawText) {
       showResults();
       return;
     }
+    if (intent === "interview") {
+      state.mode = "interview";
+      if (!state.disciplineKey) {
+        askForStudy();
+        return;
+      }
+      showResults();
+      return;
+    }
     if (intent === "internships" || intent === "jobs") {
       state.mode = intent;
       showResults();
@@ -1305,7 +1722,7 @@ function startConversation() {
   state.locationMatched = false;
 
   queueBotMessage(
-    "Hi! I can help you find internships, graduate programs, and jobs that are open or opening soon. How can I help?",
+    "Hi! Type in the box below or tap a button to find internships, graduate programs, jobs, or interview practice. How can I help?",
     buildOptions(HELP_OPTIONS),
     520
   );
@@ -1329,4 +1746,9 @@ resetButton.addEventListener("click", () => {
   startConversation();
 });
 
+if (themeToggle) {
+  themeToggle.addEventListener("click", toggleTheme);
+}
+
+applyTheme(getInitialTheme());
 startConversation();

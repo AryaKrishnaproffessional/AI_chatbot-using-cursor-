@@ -16,21 +16,35 @@
             area.
           </p>
         </div>
-        <button id="reset" class="ghost-button" type="button">Start over</button>
+        <div class="header-actions">
+          <button id="theme-toggle" class="ghost-button" type="button">
+            Dark mode
+          </button>
+          <button id="reset" class="ghost-button" type="button">
+            Start over
+          </button>
+        </div>
       </header>
 
       <section id="chat" class="chat" aria-live="polite"></section>
 
-      <form id="input-form" class="input-bar">
-        <label class="sr-only" for="message-input">Message</label>
-        <input
-          id="message-input"
-          type="text"
-          placeholder="Type your answer..."
-          autocomplete="off"
-        />
-        <button type="submit">Send</button>
-      </form>
+      <section class="composer">
+        <p class="input-hint">
+          Type here first to refine results, or use the quick buttons in the
+          chat.
+        </p>
+        <form id="input-form" class="input-bar">
+          <label class="sr-only" for="message-input">Message</label>
+          <input
+            id="message-input"
+            type="text"
+            placeholder="Ask about roles, locations, or interview prep..."
+            autocomplete="off"
+            autofocus
+          />
+          <button type="submit">Send</button>
+        </form>
+      </section>
     </main>
     <script src="./app.js" defer></script>
   </body>
