@@ -556,6 +556,31 @@ const EXTRA_SKILLS_BY_DISCIPLINE = {
       why: "Automation keeps data fresh and reliable.",
       improve: "Schedule a pipeline and monitor failures.",
     },
+    {
+      skill: "Feature engineering",
+      why: "Good features improve model and insight quality.",
+      improve: "Create derived features and compare performance.",
+    },
+    {
+      skill: "Statistical reasoning",
+      why: "You need to explain significance and confidence.",
+      improve: "Work through hypothesis tests on real data.",
+    },
+    {
+      skill: "Data storytelling",
+      why: "Clear narratives drive action from stakeholders.",
+      improve: "Summarize findings with a problem-impact story.",
+    },
+    {
+      skill: "dbt or ELT tooling",
+      why: "Modern stacks rely on ELT transformations.",
+      improve: "Model a dataset in dbt and document lineage.",
+    },
+    {
+      skill: "Data governance",
+      why: "Teams need privacy, access control, and quality standards.",
+      improve: "Draft a data dictionary with ownership rules.",
+    },
   ],
   engineering: [
     {
@@ -843,118 +868,23 @@ const AI_ML_FOCUS_SKILLS = [
     skill: "ML fundamentals",
     why: "Helps you understand model strengths and limitations.",
     improve: "Build a small model and compare evaluation metrics.",
-    resources: [
-      {
-        label: "ML basics (YouTube)",
-        url: "https://www.youtube.com/watch?v=Gv9_4yMHFhI",
-      },
-    ],
   },
   {
     skill: "Model evaluation",
     why: "Hiring managers expect you to explain accuracy trade-offs.",
     improve: "Practice confusion matrices and cross-validation.",
-    resources: [
-      {
-        label: "Model evaluation guide (YouTube)",
-        url: "https://www.youtube.com/watch?v=85dtiMz9tSo",
-      },
-    ],
   },
   {
     skill: "Prompting for AI tools",
     why: "Good prompts improve output quality and consistency.",
     improve: "Iterate on prompts and compare results.",
-    resources: [
-      {
-        label: "Prompt engineering (YouTube)",
-        url: "https://www.youtube.com/watch?v=2F2YQ7C5lY0",
-      },
-    ],
   },
   {
     skill: "Responsible AI",
     why: "Teams need fairness, privacy, and risk awareness.",
     improve: "Review bias, privacy, and model governance basics.",
-    resources: [
-      {
-        label: "Responsible AI overview (YouTube)",
-        url: "https://www.youtube.com/watch?v=0P9tG0gT3eM",
-      },
-    ],
   },
 ];
-
-const PREMIUM_RESOURCES_BY_DISCIPLINE = {
-  software: [
-    {
-      label: "System design interview (YouTube)",
-      url: "https://www.youtube.com/watch?v=MbjObHmDbZo",
-    },
-    {
-      label: "JavaScript full course (YouTube)",
-      url: "https://www.youtube.com/watch?v=jS4aFq5-91M",
-    },
-  ],
-  data: [
-    {
-      label: "Data analyst roadmap (YouTube)",
-      url: "https://www.youtube.com/watch?v=7eh4d6sabA0",
-    },
-    {
-      label: "SQL full course (YouTube)",
-      url: "https://www.youtube.com/watch?v=HXV3zeQKqGY",
-    },
-  ],
-  engineering: [
-    {
-      label: "Mechanical engineering fundamentals (YouTube)",
-      url: "https://www.youtube.com/watch?v=G6mIu2gH3oI",
-    },
-  ],
-  business: [
-    {
-      label: "Business analyst roadmap (YouTube)",
-      url: "https://www.youtube.com/watch?v=K2Y5zQ1d0e4",
-    },
-  ],
-  marketing: [
-    {
-      label: "Digital marketing full course (YouTube)",
-      url: "https://www.youtube.com/watch?v=6nJ9YpPzR6A",
-    },
-  ],
-  design: [
-    {
-      label: "UX design full course (YouTube)",
-      url: "https://www.youtube.com/watch?v=_oEa5JBHnUo",
-    },
-  ],
-  health: [
-    {
-      label: "Clinical research overview (YouTube)",
-      url: "https://www.youtube.com/watch?v=KXxXr4g6M1Y",
-    },
-  ],
-  education: [
-    {
-      label: "Instructional design basics (YouTube)",
-      url: "https://www.youtube.com/watch?v=QkY2J9a4m7Q",
-    },
-  ],
-  law: [
-    {
-      label: "Legal research skills (YouTube)",
-      url: "https://www.youtube.com/watch?v=JzE2IY_Hg1A",
-    },
-  ],
-  general: [
-    {
-      label: "Interview prep playlist (YouTube)",
-      url: "https://www.youtube.com/results?search_query=interview+prep+playlist",
-    },
-  ],
-};
 
 const OPPORTUNITIES = [
   {
@@ -1243,7 +1173,7 @@ const state = {
     ai: false,
   },
   isPremium: false,
-  skillCursor: {},
+  skillPool: {},
 };
 
 let botQueue = Promise.resolve();
@@ -1418,7 +1348,8 @@ function detectAction(text) {
   if (
     normalized.includes("refresh skills") ||
     normalized.includes("new skills") ||
-    normalized.includes("more skills")
+    normalized.includes("more skills") ||
+    normalized.includes("different skills")
   ) {
     return "refresh-skills";
   }
@@ -1898,8 +1829,32 @@ function getTypeLabel(type) {
   return "Job";
 }
 
+function shuffleList(list) {
+  const array = [...list];
+  for (let i = array.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function getSkillPool(disciplineKey, combined) {
+  const existing = state.skillPool[disciplineKey];
+  if (!existing || existing.sourceLength !== combined.length) {
+    const pool = {
+      remaining: shuffleList(combined),
+      lastBatch: [],
+      sourceLength: combined.length,
+    };
+    state.skillPool[disciplineKey] = pool;
+    return pool;
+  }
+  return existing;
+}
+
 function getRotatingSkills(disciplineKey, count = 5) {
-  const base = SKILLS_BY_DISCIPLINE[disciplineKey] || SKILLS_BY_DISCIPLINE.general;
+  const base =
+    SKILLS_BY_DISCIPLINE[disciplineKey] || SKILLS_BY_DISCIPLINE.general;
   const extra =
     EXTRA_SKILLS_BY_DISCIPLINE[disciplineKey] ||
     EXTRA_SKILLS_BY_DISCIPLINE.general;
@@ -1907,13 +1862,58 @@ function getRotatingSkills(disciplineKey, count = 5) {
   if (combined.length <= count) {
     return combined;
   }
-  const cursor = state.skillCursor[disciplineKey] || 0;
+
+  const pool = getSkillPool(disciplineKey, combined);
   const selected = [];
-  for (let i = 0; i < count; i += 1) {
-    selected.push(combined[(cursor + i) % combined.length]);
+  let guard = 0;
+
+  while (selected.length < count && guard < combined.length * 4) {
+    if (pool.remaining.length === 0) {
+      pool.remaining = shuffleList(combined);
+    }
+    const candidate = pool.remaining.shift();
+    if (
+      pool.lastBatch.includes(candidate) &&
+      combined.length > count &&
+      pool.remaining.length > 0
+    ) {
+      pool.remaining.push(candidate);
+      guard += 1;
+      continue;
+    }
+    selected.push(candidate);
+    guard += 1;
   }
-  state.skillCursor[disciplineKey] = (cursor + count) % combined.length;
+
+  while (selected.length < count && pool.remaining.length > 0) {
+    selected.push(pool.remaining.shift());
+  }
+
+  pool.lastBatch = selected;
+  state.skillPool[disciplineKey] = pool;
   return selected;
+}
+
+function buildVideoSearchLink(skillLabel, disciplineLabel) {
+  const query = `${skillLabel} ${disciplineLabel} tutorial`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(
+    query
+  )}`;
+}
+
+function appendSkillVideoLink(listItem, skillLabel, disciplineLabel) {
+  if (!state.isPremium) {
+    return;
+  }
+  const container = document.createElement("div");
+  container.className = "skill-resources";
+  const link = document.createElement("a");
+  link.href = buildVideoSearchLink(skillLabel, disciplineLabel);
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  link.textContent = `Watch: ${skillLabel} (YouTube)`;
+  container.appendChild(link);
+  listItem.appendChild(container);
 }
 
 function buildMarketQuery(disciplineKey, locationLabel) {
@@ -2090,6 +2090,7 @@ function showSkills() {
     li.appendChild(
       document.createTextNode(`${item.why} Improve by ${item.improve}`)
     );
+    appendSkillVideoLink(li, item.skill, disciplineLabel);
     list.appendChild(li);
   });
   bubble.appendChild(list);
@@ -2110,21 +2111,7 @@ function showSkills() {
       li.appendChild(
         document.createTextNode(`${item.why} Improve by ${item.improve}`)
       );
-      if (state.isPremium && item.resources?.length) {
-        const resourceList = document.createElement("ul");
-        resourceList.className = "skills-list";
-        item.resources.forEach((resource) => {
-          const resourceItem = document.createElement("li");
-          const link = document.createElement("a");
-          link.href = resource.url;
-          link.target = "_blank";
-          link.rel = "noreferrer";
-          link.textContent = resource.label;
-          resourceItem.appendChild(link);
-          resourceList.appendChild(resourceItem);
-        });
-        li.appendChild(resourceList);
-      }
+      appendSkillVideoLink(li, item.skill, disciplineLabel);
       aiList.appendChild(li);
     });
     bubble.appendChild(aiList);
@@ -2134,7 +2121,7 @@ function showSkills() {
   note.className = "note";
   note.textContent = `Location focus: ${
     state.locationLabel || "any location"
-  }. Keep this list updated in app.js to stay current.`;
+  }. Tap Refresh skills for a new set.`;
   bubble.appendChild(note);
 
   const options = [
@@ -2148,28 +2135,12 @@ function showSkills() {
     { label: "Find jobs", value: "jobs" },
   ];
 
-  const resources =
-    PREMIUM_RESOURCES_BY_DISCIPLINE[state.disciplineKey || "general"] ||
-    PREMIUM_RESOURCES_BY_DISCIPLINE.general;
-  if (state.isPremium && resources?.length) {
-    const resourceHeader = document.createElement("p");
-    resourceHeader.className = "note";
-    resourceHeader.textContent = "Premium learning resources:";
-    bubble.appendChild(resourceHeader);
-
-    const resourceList = document.createElement("ul");
-    resourceList.className = "skills-list";
-    resources.forEach((resource) => {
-      const li = document.createElement("li");
-      const link = document.createElement("a");
-      link.href = resource.url;
-      link.target = "_blank";
-      link.rel = "noreferrer";
-      link.textContent = resource.label;
-      li.appendChild(link);
-      resourceList.appendChild(li);
-    });
-    bubble.appendChild(resourceList);
+  if (state.isPremium) {
+    const premiumNote = document.createElement("p");
+    premiumNote.className = "note";
+    premiumNote.textContent =
+      "Premium video links are shown under each skill.";
+    bubble.appendChild(premiumNote);
   } else {
     const premiumNote = document.createElement("p");
     premiumNote.className = "note";
@@ -2408,7 +2379,7 @@ function handlePremiumAction() {
   if (PREMIUM.demoUnlock) {
     setPremiumStatus(true);
     queueBotMessage(
-      `Premium unlocked for preview. Video resources are now available for $${PREMIUM.price}.`
+      `Premium unlocked for preview. Video links now appear under each skill.`
     );
     if (state.mode === "skills") {
       showResults();
@@ -2618,7 +2589,7 @@ function startConversation() {
   state.locationLabel = null;
   state.locationMatched = false;
   state.skillFocus = { ai: false };
-  state.skillCursor = {};
+  state.skillPool = {};
 
   queueBotMessage(
     "Hi! Type in the box below or tap a button to find internships, graduate programs, jobs, market snapshots, or interview practice. How can I help?",

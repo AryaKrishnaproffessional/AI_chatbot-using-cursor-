@@ -298,6 +298,11 @@ html[data-theme="dark"] .option-btn.premium {
   text-decoration: underline;
 }
 
+.skill-resources {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+}
+
 .input-bar {
   display: flex;
   gap: 0.5rem;
