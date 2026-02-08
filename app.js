@@ -12,7 +12,12 @@ const SOON_WINDOW_DAYS = 60;
 const MARKET_API = {
   provider: "remotive",
   endpoint: "https://remotive.com/api/remote-jobs",
-  enabled: true,
+  enabled: false,
+};
+
+const PREMIUM = {
+  price: 4.99,
+  demoUnlock: true,
 };
 
 const MARKET_QUERY_BY_DISCIPLINE = {
@@ -261,6 +266,16 @@ const SKILLS_BY_DISCIPLINE = {
       why: "Many teams deploy on cloud services.",
       improve: "Complete an intro course on AWS or Azure.",
     },
+    {
+      skill: "AI-assisted development",
+      why: "Teams use AI tooling to speed up delivery and reviews.",
+      improve: "Practice with an AI coding assistant and verify outputs.",
+    },
+    {
+      skill: "System design foundations",
+      why: "Even junior roles benefit from clear architecture thinking.",
+      improve: "Sketch system diagrams and explain trade-offs aloud.",
+    },
   ],
   data: [
     {
@@ -282,6 +297,11 @@ const SKILLS_BY_DISCIPLINE = {
       skill: "Business context",
       why: "Impact comes from tying data to decisions.",
       improve: "Write one-page summaries explaining your findings.",
+    },
+    {
+      skill: "Machine learning fundamentals",
+      why: "Many analytics roles touch basic ML models.",
+      improve: "Train a simple model and explain evaluation metrics.",
     },
   ],
   engineering: [
@@ -305,6 +325,11 @@ const SKILLS_BY_DISCIPLINE = {
       why: "Employers want engineers who can deliver milestones.",
       improve: "Create a simple Gantt plan for a study project.",
     },
+    {
+      skill: "Digital tools and automation",
+      why: "Modern engineering uses data capture and digital twins.",
+      improve: "Explore IoT monitoring or simulation tooling.",
+    },
   ],
   business: [
     {
@@ -326,6 +351,11 @@ const SKILLS_BY_DISCIPLINE = {
       skill: "Process improvement",
       why: "Employers value efficiency gains.",
       improve: "Map a simple process and propose improvements.",
+    },
+    {
+      skill: "AI for productivity",
+      why: "Business teams are expected to leverage AI tooling.",
+      improve: "Automate a report or brief using AI prompts.",
     },
   ],
   marketing: [
@@ -349,6 +379,11 @@ const SKILLS_BY_DISCIPLINE = {
       why: "Understanding users improves targeting.",
       improve: "Run a small survey and summarize findings.",
     },
+    {
+      skill: "Marketing automation",
+      why: "Automation scales campaigns and personalization.",
+      improve: "Build a simple lifecycle flow with CRM tooling.",
+    },
   ],
   design: [
     {
@@ -370,6 +405,11 @@ const SKILLS_BY_DISCIPLINE = {
       skill: "Accessibility",
       why: "Accessible design is expected in many industries.",
       improve: "Check color contrast and keyboard navigation.",
+    },
+    {
+      skill: "Design systems",
+      why: "Consistent components speed up product delivery.",
+      improve: "Create a small component library in Figma.",
     },
   ],
   health: [
@@ -393,6 +433,11 @@ const SKILLS_BY_DISCIPLINE = {
       why: "Compliance is non-negotiable in health settings.",
       improve: "Review safety protocols and create a checklist.",
     },
+    {
+      skill: "Health informatics",
+      why: "Digital records and analytics are growing rapidly.",
+      improve: "Study how data flows through a clinical system.",
+    },
   ],
   education: [
     {
@@ -414,6 +459,11 @@ const SKILLS_BY_DISCIPLINE = {
       skill: "Student support",
       why: "Inclusive practice is valued by schools.",
       improve: "Draft strategies for diverse learning needs.",
+    },
+    {
+      skill: "EdTech fluency",
+      why: "Classrooms rely on learning platforms and tools.",
+      improve: "Pilot a lesson using an LMS and analytics.",
     },
   ],
   law: [
@@ -437,6 +487,11 @@ const SKILLS_BY_DISCIPLINE = {
       why: "Clients expect clarity and empathy.",
       improve: "Write simple explanations of legal terms.",
     },
+    {
+      skill: "Legal tech literacy",
+      why: "Firms adopt automation and AI for efficiency.",
+      improve: "Review contract automation and e-discovery basics.",
+    },
   ],
   general: [
     {
@@ -458,6 +513,11 @@ const SKILLS_BY_DISCIPLINE = {
       skill: "Digital tools",
       why: "Most workplaces rely on common software.",
       improve: "Build fluency in spreadsheets and presentations.",
+    },
+    {
+      skill: "AI literacy",
+      why: "AI tools are now common across most roles.",
+      improve: "Practice prompt writing and validate outputs.",
     },
   ],
 };
@@ -603,6 +663,124 @@ const INTERVIEW_PRACTICE_BY_DISCIPLINE = {
       "Show curiosity by asking thoughtful follow-up questions.",
     ],
   },
+};
+
+const AI_ML_FOCUS_SKILLS = [
+  {
+    skill: "ML fundamentals",
+    why: "Helps you understand model strengths and limitations.",
+    improve: "Build a small model and compare evaluation metrics.",
+    resources: [
+      {
+        label: "ML basics (YouTube)",
+        url: "https://www.youtube.com/watch?v=Gv9_4yMHFhI",
+      },
+    ],
+  },
+  {
+    skill: "Model evaluation",
+    why: "Hiring managers expect you to explain accuracy trade-offs.",
+    improve: "Practice confusion matrices and cross-validation.",
+    resources: [
+      {
+        label: "Model evaluation guide (YouTube)",
+        url: "https://www.youtube.com/watch?v=85dtiMz9tSo",
+      },
+    ],
+  },
+  {
+    skill: "Prompting for AI tools",
+    why: "Good prompts improve output quality and consistency.",
+    improve: "Iterate on prompts and compare results.",
+    resources: [
+      {
+        label: "Prompt engineering (YouTube)",
+        url: "https://www.youtube.com/watch?v=2F2YQ7C5lY0",
+      },
+    ],
+  },
+  {
+    skill: "Responsible AI",
+    why: "Teams need fairness, privacy, and risk awareness.",
+    improve: "Review bias, privacy, and model governance basics.",
+    resources: [
+      {
+        label: "Responsible AI overview (YouTube)",
+        url: "https://www.youtube.com/watch?v=0P9tG0gT3eM",
+      },
+    ],
+  },
+];
+
+const PREMIUM_RESOURCES_BY_DISCIPLINE = {
+  software: [
+    {
+      label: "System design interview (YouTube)",
+      url: "https://www.youtube.com/watch?v=MbjObHmDbZo",
+    },
+    {
+      label: "JavaScript full course (YouTube)",
+      url: "https://www.youtube.com/watch?v=jS4aFq5-91M",
+    },
+  ],
+  data: [
+    {
+      label: "Data analyst roadmap (YouTube)",
+      url: "https://www.youtube.com/watch?v=7eh4d6sabA0",
+    },
+    {
+      label: "SQL full course (YouTube)",
+      url: "https://www.youtube.com/watch?v=HXV3zeQKqGY",
+    },
+  ],
+  engineering: [
+    {
+      label: "Mechanical engineering fundamentals (YouTube)",
+      url: "https://www.youtube.com/watch?v=G6mIu2gH3oI",
+    },
+  ],
+  business: [
+    {
+      label: "Business analyst roadmap (YouTube)",
+      url: "https://www.youtube.com/watch?v=K2Y5zQ1d0e4",
+    },
+  ],
+  marketing: [
+    {
+      label: "Digital marketing full course (YouTube)",
+      url: "https://www.youtube.com/watch?v=6nJ9YpPzR6A",
+    },
+  ],
+  design: [
+    {
+      label: "UX design full course (YouTube)",
+      url: "https://www.youtube.com/watch?v=_oEa5JBHnUo",
+    },
+  ],
+  health: [
+    {
+      label: "Clinical research overview (YouTube)",
+      url: "https://www.youtube.com/watch?v=KXxXr4g6M1Y",
+    },
+  ],
+  education: [
+    {
+      label: "Instructional design basics (YouTube)",
+      url: "https://www.youtube.com/watch?v=QkY2J9a4m7Q",
+    },
+  ],
+  law: [
+    {
+      label: "Legal research skills (YouTube)",
+      url: "https://www.youtube.com/watch?v=JzE2IY_Hg1A",
+    },
+  ],
+  general: [
+    {
+      label: "Interview prep playlist (YouTube)",
+      url: "https://www.youtube.com/results?search_query=interview+prep+playlist",
+    },
+  ],
 };
 
 const OPPORTUNITIES = [
@@ -888,6 +1066,10 @@ const state = {
   locationKey: null,
   locationLabel: null,
   locationMatched: false,
+  skillFocus: {
+    ai: false,
+  },
+  isPremium: false,
 };
 
 let botQueue = Promise.resolve();
@@ -895,6 +1077,7 @@ let isBotTyping = false;
 let latestPromptElement = null;
 
 const THEME_STORAGE_KEY = "careerCompassTheme";
+const PREMIUM_STORAGE_KEY = "careerCompassPremium";
 
 function normalizeInput(text) {
   return text
@@ -902,6 +1085,28 @@ function normalizeInput(text) {
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function detectSkillFocus(text) {
+  const normalized = ` ${normalizeInput(text)} `;
+  const aiDetected =
+    normalized.includes(" ai ") ||
+    normalized.includes(" ml ") ||
+    normalized.includes("machine learning") ||
+    normalized.includes("deep learning") ||
+    normalized.includes("artificial intelligence") ||
+    normalized.includes("llm");
+  return {
+    ai: aiDetected,
+  };
+}
+
+function updateSkillFocus(text) {
+  if (!text) {
+    return;
+  }
+  const focus = detectSkillFocus(text);
+  state.skillFocus.ai = state.skillFocus.ai || focus.ai;
 }
 
 function titleCase(text) {
@@ -926,6 +1131,16 @@ function safeStorageSet(key, value) {
   } catch (error) {
     // Ignore storage failures in restricted contexts.
   }
+}
+
+function getInitialPremiumStatus() {
+  const stored = safeStorageGet(PREMIUM_STORAGE_KEY);
+  return stored === "true";
+}
+
+function setPremiumStatus(enabled) {
+  state.isPremium = enabled;
+  safeStorageSet(PREMIUM_STORAGE_KEY, enabled ? "true" : "false");
 }
 
 function getInitialTheme() {
@@ -981,7 +1196,12 @@ function detectIntent(text) {
   ) {
     return "market";
   }
-  if (normalized.includes("skill")) {
+  if (
+    normalized.includes("skill") ||
+    normalized.includes("ai") ||
+    normalized.includes("ml") ||
+    normalized.includes("machine learning")
+  ) {
     return "skills";
   }
   return null;
@@ -1020,6 +1240,13 @@ function detectAction(text) {
     normalized.includes("switch role")
   ) {
     return "change-type";
+  }
+  if (
+    normalized.includes("premium") ||
+    normalized.includes("upgrade") ||
+    normalized.includes("unlock")
+  ) {
+    return "premium";
   }
   return null;
 }
@@ -1532,7 +1759,7 @@ async function fetchMarketInsights(disciplineKey, locationLabel) {
     return {
       ...buildFallbackInsights(disciplineKey),
       query,
-      note: "Live market API is disabled. Showing a curated snapshot instead.",
+      note: "Live market API is disabled due to access restrictions. Showing a curated snapshot instead.",
     };
   }
 
@@ -1666,24 +1893,93 @@ function showSkills() {
   });
   bubble.appendChild(list);
 
+  if (state.skillFocus.ai) {
+    const aiHeader = document.createElement("p");
+    aiHeader.className = "note";
+    aiHeader.textContent = "AI/ML focus add-ons:";
+    bubble.appendChild(aiHeader);
+
+    const aiList = document.createElement("ul");
+    aiList.className = "skills-list";
+    AI_ML_FOCUS_SKILLS.forEach((item) => {
+      const li = document.createElement("li");
+      const strong = document.createElement("strong");
+      strong.textContent = `${item.skill}: `;
+      li.appendChild(strong);
+      li.appendChild(
+        document.createTextNode(`${item.why} Improve by ${item.improve}`)
+      );
+      if (state.isPremium && item.resources?.length) {
+        const resourceList = document.createElement("ul");
+        resourceList.className = "skills-list";
+        item.resources.forEach((resource) => {
+          const resourceItem = document.createElement("li");
+          const link = document.createElement("a");
+          link.href = resource.url;
+          link.target = "_blank";
+          link.rel = "noreferrer";
+          link.textContent = resource.label;
+          resourceItem.appendChild(link);
+          resourceList.appendChild(resourceItem);
+        });
+        li.appendChild(resourceList);
+      }
+      aiList.appendChild(li);
+    });
+    bubble.appendChild(aiList);
+  }
+
   const note = document.createElement("p");
   note.className = "note";
   note.textContent = `Location focus: ${
     state.locationLabel || "any location"
-  }.`;
+  }. Keep this list updated in app.js to stay current.`;
   bubble.appendChild(note);
 
-  bubble.appendChild(
-    createOptions([
-      { label: "Change location", value: "change-location" },
-      { label: "Change study area", value: "change-discipline" },
-      { label: "Market snapshot", value: "market" },
-      { label: "Interview practice", value: "interview" },
-      { label: "Start a new search", value: "restart" },
-      { label: "Find internships and grad programs", value: "internships" },
-      { label: "Find jobs", value: "jobs" },
-    ])
-  );
+  const options = [
+    { label: "Change location", value: "change-location" },
+    { label: "Change study area", value: "change-discipline" },
+    { label: "Market snapshot", value: "market" },
+    { label: "Interview practice", value: "interview" },
+    { label: "Start a new search", value: "restart" },
+    { label: "Find internships and grad programs", value: "internships" },
+    { label: "Find jobs", value: "jobs" },
+  ];
+
+  const resources =
+    PREMIUM_RESOURCES_BY_DISCIPLINE[state.disciplineKey || "general"] ||
+    PREMIUM_RESOURCES_BY_DISCIPLINE.general;
+  if (state.isPremium && resources?.length) {
+    const resourceHeader = document.createElement("p");
+    resourceHeader.className = "note";
+    resourceHeader.textContent = "Premium learning resources:";
+    bubble.appendChild(resourceHeader);
+
+    const resourceList = document.createElement("ul");
+    resourceList.className = "skills-list";
+    resources.forEach((resource) => {
+      const li = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = resource.url;
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.textContent = resource.label;
+      li.appendChild(link);
+      resourceList.appendChild(li);
+    });
+    bubble.appendChild(resourceList);
+  } else {
+    const premiumNote = document.createElement("p");
+    premiumNote.className = "note";
+    premiumNote.textContent = `Video resources are a premium add-on ($${PREMIUM.price}).`;
+    bubble.appendChild(premiumNote);
+    options.unshift({
+      label: `Unlock video resources ($${PREMIUM.price})`,
+      value: "premium",
+    });
+  }
+
+  bubble.appendChild(createOptions(options));
   markLatestPrompt(bubble);
   scrollToBottom();
 }
@@ -1841,6 +2137,7 @@ function handleHelpIntent(text) {
 }
 
 function handleStudyResponse(text) {
+  updateSkillFocus(text);
   const resolved = resolveDiscipline(text);
   applyDiscipline(resolved);
 
@@ -1872,6 +2169,7 @@ function handleLocationResponse(text) {
 }
 
 function handleJobTypeResponse(text) {
+  updateSkillFocus(text);
   const intent = detectIntent(text);
   if (!intent) {
     queueBotMessage(
@@ -1898,6 +2196,23 @@ function handleJobTypeResponse(text) {
     return;
   }
   showResults();
+}
+
+function handlePremiumAction() {
+  if (state.isPremium) {
+    queueBotMessage("Premium is already unlocked. Enjoy the extra resources!");
+    return;
+  }
+  if (PREMIUM.demoUnlock) {
+    setPremiumStatus(true);
+    queueBotMessage(
+      `Premium unlocked for preview. Video resources are now available for $${PREMIUM.price}.`
+    );
+    return;
+  }
+  queueBotMessage(
+    `Premium resources cost $${PREMIUM.price}. Checkout is not configured yet.`
+  );
 }
 
 function handleMarketRequest(text) {
@@ -1955,6 +2270,13 @@ function handleUserMessage(rawText) {
 
   if (shouldRestart(text)) {
     startConversation();
+    return;
+  }
+
+  updateSkillFocus(text);
+  const action = detectAction(text);
+  if (action === "premium") {
+    handlePremiumAction();
     return;
   }
 
@@ -2071,6 +2393,7 @@ function startConversation() {
   isBotTyping = false;
   latestPromptElement = null;
   setInputEnabled(true);
+  state.isPremium = getInitialPremiumStatus();
   state.step = "help";
   state.mode = null;
   state.disciplineKey = null;
@@ -2079,6 +2402,7 @@ function startConversation() {
   state.locationKey = null;
   state.locationLabel = null;
   state.locationMatched = false;
+  state.skillFocus = { ai: false };
 
   queueBotMessage(
     "Hi! Type in the box below or tap a button to find internships, graduate programs, jobs, market snapshots, or interview practice. How can I help?",
