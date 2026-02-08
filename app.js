@@ -2,6 +2,7 @@ const chat = document.querySelector("#chat");
 const form = document.querySelector("#input-form");
 const input = document.querySelector("#message-input");
 const resetButton = document.querySelector("#reset");
+const sendButton = form.querySelector("button");
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const SOON_WINDOW_DAYS = 60;
@@ -9,6 +10,12 @@ const SOON_WINDOW_DAYS = 60;
 const HELP_OPTIONS = [
   { label: "Find internships and graduate programs", value: "internships" },
   { label: "Find jobs", value: "jobs" },
+  { label: "Skills in demand", value: "skills" },
+];
+
+const JOB_TYPE_OPTIONS = [
+  { label: "Internships & graduate programs", value: "internships" },
+  { label: "Jobs", value: "jobs" },
   { label: "Skills in demand", value: "skills" },
 ];
 
@@ -26,6 +33,7 @@ const DISCIPLINE_OPTIONS = [
 ];
 
 const LOCATION_OPTIONS = [
+  { label: "All locations", value: "all" },
   { label: "Sydney", value: "sydney" },
   { label: "Melbourne", value: "melbourne" },
   { label: "Brisbane", value: "brisbane" },
@@ -36,6 +44,7 @@ const LOCATION_OPTIONS = [
 ];
 
 const LOCATION_LABELS = {
+  all: "All locations",
   sydney: "Sydney (NSW)",
   melbourne: "Melbourne (VIC)",
   brisbane: "Brisbane (QLD)",
@@ -47,6 +56,7 @@ const LOCATION_LABELS = {
 };
 
 const LOCATION_SYNONYMS = {
+  all: ["all locations", "anywhere", "any location", "all states", "any"],
   sydney: ["sydney", "nsw", "new south wales"],
   melbourne: ["melbourne", "vic", "victoria"],
   brisbane: ["brisbane", "qld", "queensland"],
@@ -545,6 +555,9 @@ const state = {
   locationMatched: false,
 };
 
+let botQueue = Promise.resolve();
+let isBotTyping = false;
+
 function normalizeInput(text) {
   return text
     .toLowerCase()
@@ -571,6 +584,43 @@ function detectIntent(text) {
   }
   if (normalized.includes("skill")) {
     return "skills";
+  }
+  return null;
+}
+
+function detectAction(text) {
+  const normalized = normalizeInput(text);
+  if (
+    normalized.includes("change location") ||
+    normalized.includes("other location") ||
+    normalized.includes("other state") ||
+    normalized.includes("different state") ||
+    normalized.includes("other city") ||
+    normalized.includes("location") ||
+    normalized.includes("state") ||
+    normalized.includes("city")
+  ) {
+    return "change-location";
+  }
+  if (
+    normalized.includes("study") ||
+    normalized.includes("discipline") ||
+    normalized.includes("degree") ||
+    normalized.includes("major") ||
+    normalized.includes("course")
+  ) {
+    return "change-discipline";
+  }
+  if (
+    normalized.includes("job type") ||
+    normalized.includes("role type") ||
+    normalized.includes("other job type") ||
+    normalized.includes("change type") ||
+    normalized.includes("switch type") ||
+    normalized.includes("switch job") ||
+    normalized.includes("switch role")
+  ) {
+    return "change-type";
   }
   return null;
 }
@@ -671,6 +721,9 @@ function matchesDiscipline(opportunity, disciplineKey) {
 }
 
 function matchesLocation(opportunity, locationKey, locationMatched) {
+  if (locationKey === "all") {
+    return true;
+  }
   if (locationMatched) {
     if (locationKey === "remote") {
       return opportunity.locations.includes("remote");
@@ -690,6 +743,35 @@ function buildOptions(options) {
   }));
 }
 
+function pause(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getTypingDelay(text, base = 420) {
+  const length = text ? text.length : 0;
+  const extra = Math.min(700, Math.max(0, length * 12));
+  return Math.min(1100, base + extra);
+}
+
+function setInputEnabled(enabled) {
+  input.disabled = !enabled;
+  sendButton.disabled = !enabled;
+  if (enabled) {
+    chat.classList.remove("busy");
+  } else {
+    chat.classList.add("busy");
+  }
+}
+
+function enqueueBotAction(action) {
+  botQueue = botQueue.then(action).catch((error) => {
+    console.error(error);
+    isBotTyping = false;
+    setInputEnabled(true);
+  });
+  return botQueue;
+}
+
 function createMessageBubble(sender) {
   const wrapper = document.createElement("div");
   wrapper.className = `message ${sender}`;
@@ -698,6 +780,32 @@ function createMessageBubble(sender) {
   wrapper.appendChild(bubble);
   chat.appendChild(wrapper);
   return bubble;
+}
+
+function createTypingIndicator() {
+  const bubble = createMessageBubble("bot");
+  bubble.classList.add("typing");
+  const indicator = document.createElement("div");
+  indicator.className = "typing-indicator";
+  for (let i = 0; i < 3; i += 1) {
+    const dot = document.createElement("span");
+    dot.className = "typing-dot";
+    indicator.appendChild(dot);
+  }
+  bubble.appendChild(indicator);
+  scrollToBottom();
+  return bubble;
+}
+
+async function withTyping(renderFn, delay) {
+  isBotTyping = true;
+  setInputEnabled(false);
+  const indicator = createTypingIndicator();
+  await pause(delay);
+  indicator.remove();
+  renderFn();
+  isBotTyping = false;
+  setInputEnabled(true);
 }
 
 function createOptions(options) {
@@ -709,6 +817,9 @@ function createOptions(options) {
     button.className = "option-btn";
     button.textContent = option.label;
     button.addEventListener("click", () => {
+      if (isBotTyping) {
+        return;
+      }
       addUserMessage(option.label);
       handleUserMessage(option.value);
     });
@@ -736,6 +847,26 @@ function addUserMessage(text) {
   scrollToBottom();
 }
 
+function queueBotMessage(text, options = [], delay = getTypingDelay(text)) {
+  enqueueBotAction(() =>
+    withTyping(() => addBotMessage(text, options), delay)
+  );
+}
+
+function queueResultsMessage(headerText, noteText, opportunities) {
+  const delay = getTypingDelay(headerText, 520);
+  enqueueBotAction(() =>
+    withTyping(
+      () => addResultsMessage(headerText, noteText, opportunities),
+      delay
+    )
+  );
+}
+
+function queueSkillsMessage() {
+  enqueueBotAction(() => withTyping(() => showSkills(), 620));
+}
+
 function addResultsMessage(headerText, noteText, opportunities) {
   const bubble = createMessageBubble("bot");
   const header = document.createElement("p");
@@ -749,6 +880,19 @@ function addResultsMessage(headerText, noteText, opportunities) {
     bubble.appendChild(note);
   }
 
+  const summary = document.createElement("div");
+  summary.className = "meta summary";
+  summary.textContent = `Filters: ${state.disciplineLabel || "Any discipline"} • ${
+    state.locationLabel || "All locations"
+  } • ${
+    state.mode === "jobs"
+      ? "Jobs"
+      : state.mode === "skills"
+      ? "Skills"
+      : "Internships & graduate programs"
+  }`;
+  bubble.appendChild(summary);
+
   if (opportunities.length === 0) {
     const empty = document.createElement("p");
     empty.textContent =
@@ -761,15 +905,43 @@ function addResultsMessage(headerText, noteText, opportunities) {
       cards.appendChild(createOpportunityCard(opportunity));
     });
     bubble.appendChild(cards);
+
+    const linkTip = document.createElement("p");
+    linkTip.className = "note";
+    linkTip.textContent =
+      "Listing links open job board search results for the role.";
+    bubble.appendChild(linkTip);
   }
 
   bubble.appendChild(
     createOptions([
+      { label: "Change location", value: "change-location" },
+      { label: "Change study area", value: "change-discipline" },
+      { label: "Switch job type", value: "change-type" },
       { label: "See skills in demand", value: "skills" },
       { label: "Start a new search", value: "restart" },
     ])
   );
   scrollToBottom();
+}
+
+function buildSearchLinks(opportunity) {
+  const query = `${opportunity.title} ${opportunity.company}`;
+  const primaryLocation = opportunity.locations[0]
+    ? formatLocationLabel(opportunity.locations[0])
+    : "";
+  const encodedQuery = encodeURIComponent(query);
+  const encodedLocation = encodeURIComponent(primaryLocation);
+  return [
+    {
+      label: "Search on Seek",
+      url: `https://www.seek.com.au/jobs?keywords=${encodedQuery}&where=${encodedLocation}`,
+    },
+    {
+      label: "Search on LinkedIn",
+      url: `https://www.linkedin.com/jobs/search/?keywords=${encodedQuery}&location=${encodedLocation}`,
+    },
+  ];
 }
 
 function createOpportunityCard(opportunity) {
@@ -804,12 +976,17 @@ function createOpportunityCard(opportunity) {
   description.textContent = opportunity.description;
   card.appendChild(description);
 
-  const link = document.createElement("a");
-  link.href = opportunity.url;
-  link.target = "_blank";
-  link.rel = "noreferrer";
-  link.textContent = "View listing";
-  card.appendChild(link);
+  const links = document.createElement("div");
+  links.className = "card-links";
+  buildSearchLinks(opportunity).forEach((item) => {
+    const link = document.createElement("a");
+    link.href = item.url;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.textContent = item.label;
+    links.appendChild(link);
+  });
+  card.appendChild(links);
 
   return card;
 }
@@ -858,6 +1035,8 @@ function showSkills() {
 
   bubble.appendChild(
     createOptions([
+      { label: "Change location", value: "change-location" },
+      { label: "Change study area", value: "change-discipline" },
       { label: "Start a new search", value: "restart" },
       { label: "Find internships and grad programs", value: "internships" },
       { label: "Find jobs", value: "jobs" },
@@ -870,7 +1049,7 @@ function showResults() {
   state.step = "results";
 
   if (state.mode === "skills") {
-    showSkills();
+    queueSkillsMessage();
     return;
   }
 
@@ -906,12 +1085,12 @@ function showResults() {
     state.locationLabel || "your area"
   } for ${state.disciplineLabel || "your discipline"}.`;
 
-  addResultsMessage(headerText, noteText, filtered);
+  queueResultsMessage(headerText, noteText, filtered);
 }
 
 function askForStudy() {
   state.step = "study";
-  addBotMessage(
+  queueBotMessage(
     "What are you studying?",
     buildOptions(DISCIPLINE_OPTIONS)
   );
@@ -919,16 +1098,24 @@ function askForStudy() {
 
 function askForLocation() {
   state.step = "location";
-  addBotMessage(
-    "Whereabouts would you like to work?",
+  queueBotMessage(
+    "Whereabouts would you like to work? You can pick a state, city, or remote.",
     buildOptions(LOCATION_OPTIONS)
+  );
+}
+
+function askForJobType() {
+  state.step = "type";
+  queueBotMessage(
+    "Which job type should I focus on?",
+    buildOptions(JOB_TYPE_OPTIONS)
   );
 }
 
 function handleHelpIntent(text) {
   const intent = detectIntent(text);
   if (!intent) {
-    addBotMessage(
+    queueBotMessage(
       "I can help with internships, graduate programs, jobs, or in-demand skills. How can I help?",
       buildOptions(HELP_OPTIONS)
     );
@@ -940,12 +1127,10 @@ function handleHelpIntent(text) {
 
 function handleStudyResponse(text) {
   const resolved = resolveDiscipline(text);
-  state.disciplineKey = resolved.key;
-  state.disciplineLabel = resolved.label;
-  state.disciplineRecognized = resolved.recognized;
+  applyDiscipline(resolved);
 
   if (!resolved.recognized) {
-    addBotMessage(
+    queueBotMessage(
       "Thanks! I will look across a broad mix of disciplines. Whereabouts would you like to work?",
       buildOptions(LOCATION_OPTIONS)
     );
@@ -953,7 +1138,7 @@ function handleStudyResponse(text) {
     return;
   }
 
-  addBotMessage(
+  queueBotMessage(
     `Got it - ${resolved.label}. Whereabouts would you like to work?`,
     buildOptions(LOCATION_OPTIONS)
   );
@@ -962,10 +1147,49 @@ function handleStudyResponse(text) {
 
 function handleLocationResponse(text) {
   const resolved = resolveLocation(text);
+  applyLocation(resolved);
+  showResults();
+}
+
+function handleJobTypeResponse(text) {
+  const intent = detectIntent(text);
+  if (!intent) {
+    queueBotMessage(
+      "Please choose a job type to continue.",
+      buildOptions(JOB_TYPE_OPTIONS)
+    );
+    return;
+  }
+  state.mode = intent;
+  if (intent === "skills") {
+    if (!state.disciplineKey) {
+      askForStudy();
+      return;
+    }
+    showResults();
+    return;
+  }
+  if (!state.disciplineKey) {
+    askForStudy();
+    return;
+  }
+  if (!state.locationKey) {
+    askForLocation();
+    return;
+  }
+  showResults();
+}
+
+function applyDiscipline(resolved) {
+  state.disciplineKey = resolved.key;
+  state.disciplineLabel = resolved.label;
+  state.disciplineRecognized = resolved.recognized;
+}
+
+function applyLocation(resolved) {
   state.locationKey = resolved.key;
   state.locationLabel = resolved.label;
   state.locationMatched = resolved.matched;
-  showResults();
 }
 
 function shouldRestart(text) {
@@ -980,6 +1204,10 @@ function shouldRestart(text) {
 function handleUserMessage(rawText) {
   const text = rawText.trim();
   if (!text) {
+    return;
+  }
+
+  if (isBotTyping) {
     return;
   }
 
@@ -1003,8 +1231,26 @@ function handleUserMessage(rawText) {
     return;
   }
 
+  if (state.step === "type") {
+    handleJobTypeResponse(text);
+    return;
+  }
+
   if (state.step === "results") {
     const intent = detectIntent(text);
+    const action = detectAction(text);
+    if (action === "change-location") {
+      askForLocation();
+      return;
+    }
+    if (action === "change-discipline") {
+      askForStudy();
+      return;
+    }
+    if (action === "change-type") {
+      askForJobType();
+      return;
+    }
     if (intent === "skills") {
       state.mode = "skills";
       showResults();
@@ -1012,12 +1258,27 @@ function handleUserMessage(rawText) {
     }
     if (intent === "internships" || intent === "jobs") {
       state.mode = intent;
-      askForStudy();
+      showResults();
       return;
     }
-    addBotMessage(
-      "If you want, I can show skills in demand or start a new search.",
+    const locationGuess = resolveLocation(text);
+    if (locationGuess.matched) {
+      applyLocation(locationGuess);
+      showResults();
+      return;
+    }
+    const disciplineGuess = resolveDiscipline(text);
+    if (disciplineGuess.recognized) {
+      applyDiscipline(disciplineGuess);
+      showResults();
+      return;
+    }
+    queueBotMessage(
+      "Want to refine your search? You can switch job type, change location, or update your study area.",
       buildOptions([
+        { label: "Switch job type", value: "change-type" },
+        { label: "Change location", value: "change-location" },
+        { label: "Change study area", value: "change-discipline" },
         { label: "See skills in demand", value: "skills" },
         { label: "Start a new search", value: "restart" },
       ])
@@ -1031,6 +1292,9 @@ function scrollToBottom() {
 
 function startConversation() {
   chat.innerHTML = "";
+  botQueue = Promise.resolve();
+  isBotTyping = false;
+  setInputEnabled(true);
   state.step = "help";
   state.mode = null;
   state.disciplineKey = null;
@@ -1040,9 +1304,10 @@ function startConversation() {
   state.locationLabel = null;
   state.locationMatched = false;
 
-  addBotMessage(
+  queueBotMessage(
     "Hi! I can help you find internships, graduate programs, and jobs that are open or opening soon. How can I help?",
-    buildOptions(HELP_OPTIONS)
+    buildOptions(HELP_OPTIONS),
+    520
   );
 }
 
@@ -1050,6 +1315,9 @@ form.addEventListener("submit", (event) => {
   event.preventDefault();
   const message = input.value.trim();
   if (!message) {
+    return;
+  }
+  if (isBotTyping) {
     return;
   }
   addUserMessage(message);
