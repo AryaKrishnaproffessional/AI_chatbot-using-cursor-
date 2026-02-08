@@ -131,6 +131,10 @@ body {
   box-shadow: 0 6px 14px var(--shadow);
 }
 
+.bubble.prompt-highlight {
+  box-shadow: 0 0 0 2px var(--primary), 0 6px 14px var(--shadow);
+}
+
 .message.bot .bubble {
   background: var(--surface-muted);
   color: var(--text);

@@ -9,11 +9,84 @@ const inputForm = form;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const SOON_WINDOW_DAYS = 60;
 
+const MARKET_API = {
+  provider: "remotive",
+  endpoint: "https://remotive.com/api/remote-jobs",
+  enabled: true,
+};
+
+const MARKET_QUERY_BY_DISCIPLINE = {
+  software: "software engineer",
+  data: "data analyst",
+  engineering: "engineer",
+  business: "business analyst",
+  marketing: "marketing",
+  design: "product designer",
+  health: "clinical research",
+  education: "education",
+  law: "legal",
+  general: "graduate",
+};
+
+const MARKET_FALLBACK = {
+  software: {
+    roles: ["Software Engineer", "Backend Engineer", "DevOps Engineer"],
+    trends: ["Cloud migration", "AI-assisted development", "Reliability focus"],
+    skills: ["JavaScript/TypeScript", "Cloud services", "CI/CD"],
+  },
+  data: {
+    roles: ["Data Analyst", "Data Scientist", "Analytics Engineer"],
+    trends: ["Self-serve analytics", "Experimentation", "ML operations"],
+    skills: ["SQL", "Python", "Visualization"],
+  },
+  engineering: {
+    roles: ["Project Engineer", "Mechanical Engineer", "Systems Engineer"],
+    trends: ["Automation", "Sustainability", "Asset maintenance"],
+    skills: ["CAD", "Safety standards", "Project planning"],
+  },
+  business: {
+    roles: ["Business Analyst", "Finance Analyst", "Operations Analyst"],
+    trends: ["Cost optimization", "Process automation", "Data-driven planning"],
+    skills: ["Excel modeling", "Financial literacy", "Stakeholder updates"],
+  },
+  marketing: {
+    roles: ["Marketing Manager", "Growth Specialist", "Content Strategist"],
+    trends: ["Performance marketing", "Lifecycle CRM", "Brand storytelling"],
+    skills: ["Campaign analytics", "SEO/SEM", "Content planning"],
+  },
+  design: {
+    roles: ["Product Designer", "UX Researcher", "UI Designer"],
+    trends: ["Design systems", "Accessibility", "Rapid prototyping"],
+    skills: ["Figma", "User research", "Prototyping"],
+  },
+  health: {
+    roles: ["Clinical Research Coordinator", "Lab Technician", "Health Analyst"],
+    trends: ["Digital health", "Evidence-based care", "Clinical trials"],
+    skills: ["Research methods", "Data analysis", "Compliance"],
+  },
+  education: {
+    roles: ["Learning Designer", "Curriculum Developer", "Education Coordinator"],
+    trends: ["Blended learning", "Student analytics", "Inclusive design"],
+    skills: ["Lesson planning", "Assessment design", "LMS tools"],
+  },
+  law: {
+    roles: ["Legal Research Assistant", "Paralegal", "Compliance Analyst"],
+    trends: ["Privacy compliance", "RegTech adoption", "Contract automation"],
+    skills: ["Legal research", "Drafting", "Attention to detail"],
+  },
+  general: {
+    roles: ["Program Coordinator", "Analyst", "Associate"],
+    trends: ["Digital transformation", "Cross-functional delivery", "Automation"],
+    skills: ["Communication", "Problem solving", "Digital tools"],
+  },
+};
+
 const HELP_OPTIONS = [
   { label: "Find internships and graduate programs", value: "internships" },
   { label: "Find jobs", value: "jobs" },
   { label: "Interview practice", value: "interview" },
   { label: "Skills in demand", value: "skills" },
+  { label: "Market snapshot", value: "market" },
 ];
 
 const JOB_TYPE_OPTIONS = [
@@ -819,6 +892,7 @@ const state = {
 
 let botQueue = Promise.resolve();
 let isBotTyping = false;
+let latestPromptElement = null;
 
 const THEME_STORAGE_KEY = "careerCompassTheme";
 
@@ -838,8 +912,24 @@ function titleCase(text) {
     .join(" ");
 }
 
+function safeStorageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    return null;
+  }
+}
+
+function safeStorageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (error) {
+    // Ignore storage failures in restricted contexts.
+  }
+}
+
 function getInitialTheme() {
-  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  const stored = safeStorageGet(THEME_STORAGE_KEY);
   if (stored === "light" || stored === "dark") {
     return stored;
   }
@@ -854,11 +944,13 @@ function updateThemeToggle(theme) {
     return;
   }
   themeToggle.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+  themeToggle.setAttribute("aria-pressed", theme === "dark");
 }
 
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  document.documentElement.style.colorScheme = theme;
+  safeStorageSet(THEME_STORAGE_KEY, theme);
   updateThemeToggle(theme);
 }
 
@@ -878,6 +970,16 @@ function detectIntent(text) {
   }
   if (normalized.includes("interview") || normalized.includes("practice")) {
     return "interview";
+  }
+  if (
+    normalized.includes("market") ||
+    normalized.includes("salary") ||
+    normalized.includes("trend") ||
+    normalized.includes("hiring") ||
+    normalized.includes("demand") ||
+    normalized.includes("outlook")
+  ) {
+    return "market";
   }
   if (normalized.includes("skill")) {
     return "skills";
@@ -1073,6 +1175,25 @@ function focusInput(shouldFlash = false) {
   }
 }
 
+function markLatestPrompt(element) {
+  if (latestPromptElement) {
+    latestPromptElement.classList.remove("prompt-highlight");
+  }
+  latestPromptElement = element;
+}
+
+function jumpToLatestPrompt() {
+  if (latestPromptElement) {
+    latestPromptElement.scrollIntoView({ behavior: "smooth", block: "end" });
+    latestPromptElement.classList.add("prompt-highlight");
+    setTimeout(() => {
+      latestPromptElement?.classList.remove("prompt-highlight");
+    }, 900);
+  }
+  scrollToBottom();
+  focusInput(true);
+}
+
 function enqueueBotAction(action) {
   botQueue = botQueue.then(action).catch((error) => {
     console.error(error);
@@ -1131,7 +1252,7 @@ function createOptions(options) {
       if (isBotTyping) {
         return;
       }
-      focusInput(true);
+      jumpToLatestPrompt();
       addUserMessage(option.label);
       handleUserMessage(option.value);
     });
@@ -1148,6 +1269,7 @@ function addBotMessage(text, options = []) {
   if (options.length > 0) {
     bubble.appendChild(createOptions(options));
   }
+  markLatestPrompt(bubble);
   scrollToBottom();
 }
 
@@ -1184,6 +1306,29 @@ function queueInterviewPractice() {
   enqueueBotAction(() => withTyping(() => showInterviewPractice(), 640));
 }
 
+function queueMarketInsights() {
+  enqueueBotAction(async () => {
+    isBotTyping = true;
+    setInputEnabled(false);
+    const indicator = createTypingIndicator();
+    try {
+      const delay = getTypingDelay("Fetching market insights...", 520);
+      await pause(delay);
+      const insights = await fetchMarketInsights(
+        state.disciplineKey || "general",
+        state.locationLabel || "All locations"
+      );
+      indicator.remove();
+      showMarketInsights(insights);
+    } finally {
+      indicator.remove();
+      isBotTyping = false;
+      setInputEnabled(true);
+      focusInput();
+    }
+  });
+}
+
 function addResultsMessage(headerText, noteText, opportunities) {
   const bubble = createMessageBubble("bot");
   const header = document.createElement("p");
@@ -1208,6 +1353,8 @@ function addResultsMessage(headerText, noteText, opportunities) {
       ? "Skills"
       : state.mode === "interview"
       ? "Interview practice"
+      : state.mode === "market"
+      ? "Market snapshot"
       : "Internships & graduate programs"
   }`;
   bubble.appendChild(summary);
@@ -1240,10 +1387,12 @@ function addResultsMessage(headerText, noteText, opportunities) {
       { label: "Change study area", value: "change-discipline" },
       { label: "Switch job type", value: "change-type" },
       { label: "Interview practice", value: "interview" },
+      { label: "Market snapshot", value: "market" },
       { label: "See skills in demand", value: "skills" },
       { label: "Start a new search", value: "restart" },
     ])
   );
+  markLatestPrompt(bubble);
   scrollToBottom();
 }
 
@@ -1338,6 +1487,160 @@ function getTypeLabel(type) {
   return "Job";
 }
 
+function buildMarketQuery(disciplineKey, locationLabel) {
+  const baseQuery =
+    MARKET_QUERY_BY_DISCIPLINE[disciplineKey] || disciplineKey || "jobs";
+  if (
+    locationLabel &&
+    locationLabel !== "All locations" &&
+    locationLabel !== "all locations"
+  ) {
+    return `${baseQuery} ${locationLabel}`;
+  }
+  return baseQuery;
+}
+
+function summarizeTop(items, field, limit = 4) {
+  const counts = new Map();
+  items.forEach((item) => {
+    const value = item?.[field];
+    if (!value) {
+      return;
+    }
+    counts.set(value, (counts.get(value) || 0) + 1);
+  });
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([value]) => value);
+}
+
+function buildFallbackInsights(disciplineKey) {
+  const fallback = MARKET_FALLBACK[disciplineKey] || MARKET_FALLBACK.general;
+  return {
+    mode: "fallback",
+    source: "Curated snapshot",
+    roles: fallback.roles,
+    trends: fallback.trends,
+    skills: fallback.skills,
+  };
+}
+
+async function fetchMarketInsights(disciplineKey, locationLabel) {
+  const query = buildMarketQuery(disciplineKey, locationLabel);
+  if (!MARKET_API.enabled) {
+    return {
+      ...buildFallbackInsights(disciplineKey),
+      query,
+      note: "Live market API is disabled. Showing a curated snapshot instead.",
+    };
+  }
+
+  try {
+    const url = new URL(MARKET_API.endpoint);
+    url.searchParams.set("search", query);
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw new Error(`Market API error: ${response.status}`);
+    }
+    const data = await response.json();
+    const jobs = Array.isArray(data.jobs) ? data.jobs : [];
+    if (jobs.length === 0) {
+      throw new Error("No market results returned.");
+    }
+    const topTitles = summarizeTop(jobs, "title");
+    const topCompanies = summarizeTop(jobs, "company_name");
+    return {
+      mode: "live",
+      source: "Remotive (remote roles)",
+      query,
+      total: jobs.length,
+      topTitles,
+      topCompanies,
+    };
+  } catch (error) {
+    return {
+      ...buildFallbackInsights(disciplineKey),
+      query,
+      note: "Live market API is unreachable. Showing a curated snapshot instead. You can configure MARKET_API in app.js for live data.",
+    };
+  }
+}
+
+function showMarketInsights(insights) {
+  const bubble = createMessageBubble("bot");
+  const header = document.createElement("p");
+  const disciplineLabel = state.disciplineLabel || "your discipline";
+  const locationLabel = state.locationLabel || "all locations";
+  header.textContent = `Market snapshot for ${disciplineLabel} (${locationLabel})`;
+  bubble.appendChild(header);
+
+  const source = document.createElement("p");
+  source.className = "note";
+  source.textContent = `Source: ${insights.source} • Query: ${insights.query}`;
+  bubble.appendChild(source);
+
+  const list = document.createElement("ul");
+  list.className = "skills-list";
+
+  if (insights.mode === "live") {
+    const totalItem = document.createElement("li");
+    totalItem.textContent = `Open roles matched: ${insights.total}`;
+    list.appendChild(totalItem);
+
+    if (insights.topTitles?.length) {
+      const titlesItem = document.createElement("li");
+      titlesItem.textContent = `Common titles: ${insights.topTitles.join(", ")}`;
+      list.appendChild(titlesItem);
+    }
+
+    if (insights.topCompanies?.length) {
+      const companiesItem = document.createElement("li");
+      companiesItem.textContent = `Companies hiring: ${insights.topCompanies.join(
+        ", "
+      )}`;
+      list.appendChild(companiesItem);
+    }
+  } else {
+    const rolesItem = document.createElement("li");
+    rolesItem.textContent = `Typical roles: ${insights.roles.join(", ")}`;
+    list.appendChild(rolesItem);
+
+    const trendsItem = document.createElement("li");
+    trendsItem.textContent = `Current trends: ${insights.trends.join(", ")}`;
+    list.appendChild(trendsItem);
+
+    const skillsItem = document.createElement("li");
+    skillsItem.textContent = `Skills gaining demand: ${insights.skills.join(
+      ", "
+    )}`;
+    list.appendChild(skillsItem);
+  }
+
+  bubble.appendChild(list);
+
+  if (insights.note) {
+    const note = document.createElement("p");
+    note.className = "note";
+    note.textContent = insights.note;
+    bubble.appendChild(note);
+  }
+
+  bubble.appendChild(
+    createOptions([
+      { label: "Change location", value: "change-location" },
+      { label: "Change study area", value: "change-discipline" },
+      { label: "Find internships and grad programs", value: "internships" },
+      { label: "Find jobs", value: "jobs" },
+      { label: "Interview practice", value: "interview" },
+      { label: "See skills in demand", value: "skills" },
+      { label: "Start a new search", value: "restart" },
+    ])
+  );
+  markLatestPrompt(bubble);
+  scrollToBottom();
+}
+
 function showSkills() {
   const bubble = createMessageBubble("bot");
   const header = document.createElement("p");
@@ -1374,12 +1677,14 @@ function showSkills() {
     createOptions([
       { label: "Change location", value: "change-location" },
       { label: "Change study area", value: "change-discipline" },
+      { label: "Market snapshot", value: "market" },
       { label: "Interview practice", value: "interview" },
       { label: "Start a new search", value: "restart" },
       { label: "Find internships and grad programs", value: "internships" },
       { label: "Find jobs", value: "jobs" },
     ])
   );
+  markLatestPrompt(bubble);
   scrollToBottom();
 }
 
@@ -1425,12 +1730,14 @@ function showInterviewPractice() {
   bubble.appendChild(
     createOptions([
       { label: "Change study area", value: "change-discipline" },
+      { label: "Market snapshot", value: "market" },
       { label: "Find internships and grad programs", value: "internships" },
       { label: "Find jobs", value: "jobs" },
       { label: "See skills in demand", value: "skills" },
       { label: "Start a new search", value: "restart" },
     ])
   );
+  markLatestPrompt(bubble);
   scrollToBottom();
 }
 
@@ -1444,6 +1751,11 @@ function showResults() {
 
   if (state.mode === "interview") {
     queueInterviewPractice();
+    return;
+  }
+
+  if (state.mode === "market") {
+    queueMarketInsights();
     return;
   }
 
@@ -1519,7 +1831,7 @@ function handleHelpIntent(text) {
   const intent = detectIntent(text);
   if (!intent) {
     queueBotMessage(
-      "I can help with internships, graduate programs, jobs, interview practice, or in-demand skills. How can I help?",
+      "I can help with internships, graduate programs, jobs, interview practice, market snapshots, or in-demand skills. How can I help?",
       buildOptions(HELP_OPTIONS)
     );
     return;
@@ -1569,7 +1881,7 @@ function handleJobTypeResponse(text) {
     return;
   }
   state.mode = intent;
-  if (intent === "skills" || intent === "interview") {
+  if (intent === "skills" || intent === "interview" || intent === "market") {
     if (!state.disciplineKey) {
       askForStudy();
       return;
@@ -1586,6 +1898,28 @@ function handleJobTypeResponse(text) {
     return;
   }
   showResults();
+}
+
+function handleMarketRequest(text) {
+  state.mode = "market";
+  const disciplineGuess = resolveDiscipline(text);
+  if (disciplineGuess.recognized) {
+    applyDiscipline(disciplineGuess);
+  }
+  const locationGuess = resolveLocation(text);
+  if (locationGuess.matched) {
+    applyLocation(locationGuess);
+  }
+  if (!state.disciplineKey) {
+    askForStudy();
+    return true;
+  }
+  if (!state.locationKey) {
+    askForLocation();
+    return true;
+  }
+  showResults();
+  return true;
 }
 
 function applyDiscipline(resolved) {
@@ -1621,6 +1955,12 @@ function handleUserMessage(rawText) {
 
   if (shouldRestart(text)) {
     startConversation();
+    return;
+  }
+
+  const globalIntent = detectIntent(text);
+  if (globalIntent === "market" && state.step !== "results") {
+    handleMarketRequest(text);
     return;
   }
 
@@ -1673,6 +2013,23 @@ function handleUserMessage(rawText) {
       showResults();
       return;
     }
+    if (intent === "market") {
+      state.mode = "market";
+      const locationGuess = resolveLocation(text);
+      if (locationGuess.matched) {
+        applyLocation(locationGuess);
+      }
+      const disciplineGuess = resolveDiscipline(text);
+      if (disciplineGuess.recognized) {
+        applyDiscipline(disciplineGuess);
+      }
+      if (!state.disciplineKey) {
+        askForStudy();
+        return;
+      }
+      showResults();
+      return;
+    }
     if (intent === "internships" || intent === "jobs") {
       state.mode = intent;
       showResults();
@@ -1691,11 +2048,12 @@ function handleUserMessage(rawText) {
       return;
     }
     queueBotMessage(
-      "Want to refine your search? You can switch job type, change location, or update your study area.",
+      "Want to refine your search? You can switch job type, change location, update your study area, or ask for a market snapshot.",
       buildOptions([
         { label: "Switch job type", value: "change-type" },
         { label: "Change location", value: "change-location" },
         { label: "Change study area", value: "change-discipline" },
+        { label: "Market snapshot", value: "market" },
         { label: "See skills in demand", value: "skills" },
         { label: "Start a new search", value: "restart" },
       ])
@@ -1704,13 +2062,14 @@ function handleUserMessage(rawText) {
 }
 
 function scrollToBottom() {
-  chat.scrollTop = chat.scrollHeight;
+  chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
 }
 
 function startConversation() {
   chat.innerHTML = "";
   botQueue = Promise.resolve();
   isBotTyping = false;
+  latestPromptElement = null;
   setInputEnabled(true);
   state.step = "help";
   state.mode = null;
@@ -1722,7 +2081,7 @@ function startConversation() {
   state.locationMatched = false;
 
   queueBotMessage(
-    "Hi! Type in the box below or tap a button to find internships, graduate programs, jobs, or interview practice. How can I help?",
+    "Hi! Type in the box below or tap a button to find internships, graduate programs, jobs, market snapshots, or interview practice. How can I help?",
     buildOptions(HELP_OPTIONS),
     520
   );
